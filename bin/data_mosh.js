@@ -23,7 +23,7 @@ _.each(raw, function(d,i) {
 lg(species)
 
 /* Output */
-var outputFilename = './public/data/data.json';
+var outputFilename = './public/data.json';
 
 fs.writeFile(outputFilename, JSON.stringify(species, null, 4), function(err) {
     if(err) {
