@@ -5,8 +5,6 @@ var dsv = require("dsv"),
   fs = require("fs"),
   d3 = require("d3")
 
-//http://phrogz.net/fewer-lambdas-in-d3-js
-function ƒ(str) { return function(obj) { return str ? obj[str] : obj; }}
 
 var lg = console.log
 
@@ -47,3 +45,5 @@ function nonNumericKeys (set) {
     return numericKeys(set).indexOf(k) == -1
   })
 }
+//http://phrogz.net/fewer-lambdas-in-d3-js
+function ƒ(str) { return function(obj) { return str ? obj[str] : obj; }}
