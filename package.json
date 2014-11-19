@@ -1,0 +1,10 @@
+{
+  "name": "midterms",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "d3": "^3.4.13",
+    "dsv": "0.0.3",
+    "lodash": "^2.4.0"
+  }
+}
