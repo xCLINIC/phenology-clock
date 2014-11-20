@@ -1,2 +1,2 @@
-phenological-clock
+phenology-clock
 ==================
