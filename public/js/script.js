@@ -1,6 +1,41 @@
 'use strict'
 function ƒ(str) { return function(obj) { return str ? obj[str] : obj; }}
 
+window.pheno = window.pheno || {}
+
+pheno = function(parent,id){
+  var self,
+      margin = {top: 40, ight:40, bottom: 40, left: 50},
+      w = window.innerWidth - margin.left - margin.right,
+      h = window.innerWidth - margin.top - margin.bottom,
+      d1 = new Date('1/1/2014'),
+      d2 = new Date('1/1/2015'),
+      t = d3.scale.linear().domain([d1,d2]).range([0,2*Math.PI])
+
+
+  var svg = d3.select("body").append("svg")
+      .attr("width", window.innerWidth)
+      .attr("height", window.innerHeight)
+
+  var c1 = d3.scale.category20b()
+  var c2 = d3.scale.category20c()
+
+  self.draw = function(parent,id) {
+
+  }
+
+  self.resize = function(_w,_h) {
+
+  }
+
+  if(w>0){
+    self.draw(parentEl, chartId)
+  }
+
+  return self
+}
+
+
 var margin = {top: 80, right:80, bottom: 80, left: 80},
     w = Math.min(window.innerWidth, window.innerHeight) - margin.left - margin.right,
     h = Math.min(window.innerWidth, window.innerHeight) - margin.top - margin.bottom,
