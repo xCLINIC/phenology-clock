@@ -1,47 +1,23 @@
 'use strict'
 function ƒ(str) { return function(obj) { return str ? obj[str] : obj; }}
 
-window.pheno = window.pheno || {}
-
-pheno = function(parent,id){
-  var self,
-      margin = {top: 40, ight:40, bottom: 40, left: 50},
-      w = window.innerWidth - margin.left - margin.right,
-      h = window.innerWidth - margin.top - margin.bottom,
-      d1 = new Date('1/1/2014'),
-      d2 = new Date('1/1/2015'),
-      t = d3.scale.linear().domain([d1,d2]).range([0,2*Math.PI])
-
-
-  var svg = d3.select("body").append("svg")
-      .attr("width", window.innerWidth)
-      .attr("height", window.innerHeight)
-
-  var c1 = d3.scale.category20b()
-  var c2 = d3.scale.category20c()
-
-  self.draw = function(parent,id) {
-
-  }
-
-  self.resize = function(_w,_h) {
-
-  }
-
-  if(w>0){
-    self.draw(parentEl, chartId)
-  }
-
-  return self
-}
-
-
 var margin = {top: 80, right:80, bottom: 80, left: 80},
     w = Math.min(window.innerWidth, window.innerHeight) - margin.left - margin.right,
     h = Math.min(window.innerWidth, window.innerHeight) - margin.top - margin.bottom,
     d1 = new Date('1/1/2014'),
     d2 = new Date('1/1/2015'),
     time = d3.scale.linear().domain([d1,d2]).range([0,2*Math.PI])
+
+var tooltip = d3.select("body").append('div').classed('tooltip',true)
+  .style({
+    position:'absolute',
+    top:window.innerHeight/2-50+'px',
+    left:window.innerWidth/2-90+'px',
+    'text-align':'center',
+    opacity:1,
+    width: '200px',
+    height: '100px'
+  })
 
 var svg = d3.select("body").append("svg")
     .attr("width", window.innerWidth)
@@ -80,26 +56,30 @@ d3.json("data.json", function(error, data) {
 
   path.enter().append("path")
     .style({
-      'fill-opacity': .9,
+      'fill-opacity': .7,
       'stroke-width': '0px'
     })
     .attr('fill',function(d,i) {return (i<20) ? c1(i) : c2(i) })
     .attr('stroke',function(d,i) {return (i<20) ? c1(i) : c2(i) })
+    .on('mouseover', function(d) {
+      tooltip
+        .attr('opacity',1)
+        .html('')
+        .append('h2')
+          .text(d['common-name'])
+        .append('p')
+          .text(d.category)
+      d3.select(this).style('fill-opacity', 1).attr('stroke-width', '3px')
+    })
+    .on('mouseout',function(d) {
+      tooltip
+        .attr('opacity',1)
+      d3.select(this).style('fill-opacity', .7).attr('stroke-width', '0px')
+    })
     .transition()
       .ease("elastic")
       .duration(750)
-      .attrTween("d", arcTween);
-
-  path.transition()
-      .ease("elastic")
-      .duration(750)
-      .attrTween("d", arcTween);
-
-  path.exit().transition()
-      .ease("bounce")
-      .duration(750)
-      .attrTween("d", arcTween)
-      .remove();
+      .attr("d", arc);
 
   var cross = svg.append('g')
         .classed('logo',true)
@@ -118,8 +98,7 @@ d3.json("data.json", function(error, data) {
       return arc(i(t))
     }
   }
-  // debugger
   window.onresize = _.debounce(function(){
-    console.log(window.innerWidth)
+    // console.log(window.innerWidth)
   }, 250); 
 })
