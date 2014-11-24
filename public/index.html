@@ -10,26 +10,76 @@
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
+
+            svg {
+              /*transform-origin: center;*/
+              -webkit-transition-duration: 1.8s;
+              -moz-transition-duration: 1.8s;
+              -o-transition-duration: 1.8s;
+              transition-duration: 1.8s;
+
+              -webkit-transition-property: -webkit-transform;
+              -moz-transition-property: -moz-transform;
+              -o-transition-property: -o-transform;
+              transition-property: transform;
+              
+            }
+            .arc path{
+              -webkit-transition: opacity .1s ease-in-out;
+              -moz-transition: opacity .1s ease-in-out;
+              -ms-transition: opacity .1s ease-in-out;
+              -o-transition: opacity .1s ease-in-out;
+              transition: opacity .1s ease-in-out;
+            }
+
+            .months text {
+              font: 20px sans-serif;
+            }
+
             .axis text {
               font: 10px sans-serif;
             }
 
-            .axis line,
+            circle {
+                fill:none;
+                stroke: #777;
+            }  
+             
+            .tspan {
+                fill:#333;
+            }
+
+            .axis line{
+              fill: none;
+              stroke: #777;
+              stroke-dasharray: 1,1;
+            }
+
             .axis circle {
               fill: none;
               stroke: #777;
               stroke-dasharray: 1,1;
             }
 
-            .axis :last-of-type circle {
-              stroke: #333;
-              stroke-dasharray: none;
-            }
-
             .line {
               fill: none;
               stroke: red;
               stroke-width: 1.5px;
+            }
+
+
+            @media only screen and (max-width:600px)  {
+              .axis line{
+                opacity: 0;
+              }
+
+              .axis text {
+                opacity: 0;
+              }
+
+              .months text {
+                font: 10px sans-serif;
+              }
             }
         </style>
         <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
