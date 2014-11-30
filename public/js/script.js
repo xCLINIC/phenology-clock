@@ -1,6 +1,4 @@
 'use strict'
-function ƒ(str) { return function(obj) { return str ? obj[str] : obj; }}
-
 window.pheno = window.pheno || {}
 
 pheno = function(parent,id){
@@ -18,7 +16,7 @@ pheno = function(parent,id){
       arcPaths,
       categories,
       species = {},
-      margin = {r: 30},
+      margin = {r: 90},
       arc = d3.svg.arc(),
       d1 = new Date('1/1/2014'),
       d2 = new Date('1/1/2015'),
@@ -31,6 +29,7 @@ pheno = function(parent,id){
       innerBound = .15*outerBound,
       axisRadus = outerBound/2+10,
       months = [ "January", "February", "March", "April", "May", "June","July", "August", "September", "October", "November", "December" ],
+      colors = ["YlOrRd", "PuBuGn", "Purples", "Reds", "YlGnBu", "Blues", "YlGn", "BuPu", "YlOrBr", "PuRd", "RdPu", "GnBu"],
       time = d3.scale.linear().domain([d1,d2]).range([0,2*Math.PI])
 
   var line = d3.svg.line.radial()
@@ -75,7 +74,6 @@ pheno = function(parent,id){
         //   var x =  Math.cos(time(doy[364-d].getDate()))
         //   var y =  Math.sin(time(doy[364-d].getDate()))
 
-        //   console.log(d)
         //   var matrix = "matrix(" +cos+ "," +sin+ "," +(-sin)+ "," +cos+ "," +x*(axisRadus)+ "," +y*(axisRadus)+ ")"
         //   return (doy[364-d].getDate() == 1 || doy[364-d].getDate()%7 ==0)? matrix : null
         // })
@@ -102,7 +100,6 @@ pheno = function(parent,id){
       .attr('startOffset',function(d,i) {return ((i+3)*100/12)%100+'%'})
       .text(function(d,i) {return months[d.getMonth()]})
       .on('click', function(d,i){
-        console.log(time(d))
         d3.select('svg').style('transition-duration', '.8s')
         orientSpeciesTop({startAngle:time(d)})
       })
@@ -135,8 +132,10 @@ pheno = function(parent,id){
           'opacity': .7,
           'stroke-width': '0px'
         })
-        .attr('fill',function(d,i) {return (i<20) ? c1(i) : c2(i) })
-        .attr('stroke',function(d,i) {return (i<20) ? c1(i) : c2(i) })
+        .attr('fill',function(d,i) {
+          console.log(categories.indexOf(d.data.category), d.data.category)
+          return (i<20) ? c1(i) : c2(i) })
+        // .attr('stroke',function(d,i) {return (i<20) ? c1(i) : c2(i) })
         .on('mouseover', function(d) {
           tooltip
             .attr('opacity',1)
@@ -212,10 +211,14 @@ pheno = function(parent,id){
       o.endAngle = time((new Date(d.end)).getTime())
       o.next = _.clone(o)
       o.endAngle = time((new Date(d.start)).getTime())
+
+      if(d.category === '') d.category = "uncategorized"
       o.data = d 
       temp.push(o)
     })
     data = temp
+
+    categories = _.uniq(data.map(function(d) {return d.data.category}))
 
     console.log(data,categories)
     cRadius = d3.scale.ordinal().domain(d3.range(categories.length)).rangePoints([innerBound, outerBound/2+arcDiff], 2)
