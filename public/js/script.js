@@ -29,8 +29,14 @@ pheno = function(parent,id){
       innerBound = .15*outerBound,
       axisRadus = outerBound/2+10,
       months = [ "January", "February", "March", "April", "May", "June","July", "August", "September", "October", "November", "December" ],
-      colors = ["YlOrRd", "PuBuGn", "Purples", "Reds", "YlGnBu", "Blues", "YlGn", "BuPu", "YlOrBr", "PuRd", "RdPu", "GnBu"],
-      time = d3.scale.linear().domain([d1,d2]).range([0,2*Math.PI])
+      time = d3.scale.linear().domain([d1,d2]).range([0,2*Math.PI]),
+      colors = ["Oranges", "Purples", "Blues", "Greens", "Reds"]
+      // colors = ["YlOrRd", "PuBuGn", "Purples", "Reds", "YlGnBu", "Blues", "YlGn", "BuPu", "YlOrBr", "PuRd", "RdPu", "GnBu"]
+      // colors = ["PuBuGn", "RdPu", "PuRd", "YlGnBu", "YlOrBr", "Blues", "YlGn", "YlOrRd", "GnBu", "BuPu", "Reds", "Purples"]
+      // colors = ["YlOrRd", "YlGn", "Purples", "YlGnBu", "PuRd", "BuPu", "RdPu", "Blues", "PuBuGn", "YlOrBr", "Reds", "GnBu"]
+      // colors = ["YlGn", "YlGnBu", "GnBu", "PuBuGn", "BuPu", "RdPu", "PuRd", "YlOrRd", "YlOrBr", "Purples", "Blues", "Reds"]
+
+  var colorBrewer = d3.entries(colorbrewer).filter(function(d){return colors.indexOf(d.key) >= 0 })
 
   var line = d3.svg.line.radial()
       .radius(function(d) { return r(d[1]); })
@@ -63,7 +69,7 @@ pheno = function(parent,id){
     dayTicks.append("text")
         .attr("x", axisRadus)
         .attr("dy", ".5em")
-        .text(function(d) { return (doy[364-d].getDate() == 1 || doy[364-d].getDate()%7 ==0)? doy[364-d].getDate():''; })
+        .text(function(d) { return (doy[364-d].getDate() == 1 || doy[364-d].getDate()%7 ==0)? doy[364-d].getDate():''})
         // TODO fix this rotation
         // .attr("transform", function(d) { 
         //     if((doy[364-d].getDate() == 1 || doy[364-d].getDate()%7 ==0)) console.log(time(doy[364-d]))
@@ -77,7 +83,6 @@ pheno = function(parent,id){
         //   var matrix = "matrix(" +cos+ "," +sin+ "," +(-sin)+ "," +cos+ "," +x*(axisRadus)+ "," +y*(axisRadus)+ ")"
         //   return (doy[364-d].getDate() == 1 || doy[364-d].getDate()%7 ==0)? matrix : null
         // })
-
 
     clock.append('g').classed('months', true)
       
@@ -120,22 +125,24 @@ pheno = function(parent,id){
         .style("text-anchor", "middle")
         .text(function(d) { return d; });
 
-    arcPaths = clock
-      .append("g")
-        .classed('arc',true)
-      .selectAll("path")
-        .data(data)
-        .each(function(d,i) {d.id = i})
+    var arcGroups = clock
+      .selectAll(".category")
+      .data(categories)
+        .enter().append("g")
+        .attr('class', function(d) {
+          return 'category '+ d
+        })
 
-    arcPaths.enter().append("path")
+    arcPaths = arcGroups
+      .selectAll("path")
+      .data(function(d,i) { return species[d] })
+      .enter().append("path")
         .style({
           'opacity': .7,
           'stroke-width': '0px'
         })
-        .attr('fill',function(d,i) {
-          console.log(categories.indexOf(d.data.category), d.data.category)
-          return (i<20) ? c1(i) : c2(i) })
-        // .attr('stroke',function(d,i) {return (i<20) ? c1(i) : c2(i) })
+        .attr('fill',function(d,i) {return brew(d.data.category, i)})
+        .attr('stroke',function(d,i) {return (i<20) ? c1(i) : c2(i) })
         .on('mouseover', function(d) {
           tooltip
             .attr('opacity',1)
@@ -192,16 +199,7 @@ pheno = function(parent,id){
     r = d3.scale.linear().domain([0, data.length-1]).range([innerBound, Math.min(w/2,h/2)])
     arcDiff = Math.floor((r.range()[1]-r.range()[0])/data.length)
     categories = _.uniq(data.map(function(d) {return d.category}))
-    
-    var temp = []
-    _.each(categories, function(c) {
-      species[c] = _.filter(data, function(d,i) {
-        return c==d.category
-      })
-      temp = temp.concat(species[c])
-    })
-    data = temp
-    
+     
     var temp = []
     _.each(_d,function(d,i) {
       var o = {}
@@ -211,16 +209,22 @@ pheno = function(parent,id){
       o.endAngle = time((new Date(d.end)).getTime())
       o.next = _.clone(o)
       o.endAngle = time((new Date(d.start)).getTime())
-
-      if(d.category === '') d.category = "uncategorized"
+      d.id = i
       o.data = d 
       temp.push(o)
     })
     data = temp
+    
+    var temp = []
+    _.each(categories, function(c,i) {
+      species[c] = _.filter(data, function(d,i) {
+        return c==d.data.category
+      })
+      temp = temp.concat(species[c])
+    })
+    data = temp
 
-    categories = _.uniq(data.map(function(d) {return d.data.category}))
-
-    console.log(data,categories)
+    console.log(data,categories,species)
     cRadius = d3.scale.ordinal().domain(d3.range(categories.length)).rangePoints([innerBound, outerBound/2+arcDiff], 2)
 
     if(w>0){ // should be minBound
@@ -290,6 +294,20 @@ pheno = function(parent,id){
       range.push(new Date(i))
     }
     return range
+  }
+
+  function brew (category, i) {
+    var ci = categories.indexOf(category)
+    var scheme = colors[ci%colors.length]
+
+    var cb = colorBrewer.filter(function(d) {
+      return d.key == scheme
+    })[0]
+
+    var dataClasses = 9 // total number of colors within a scheme
+    var slice = 2 // remove the first n colors usually too light
+
+    return cb.value[dataClasses].slice(slice, dataClasses)[(i)%(dataClasses-slice)]
   }
   return self
 }
