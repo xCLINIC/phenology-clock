@@ -13,6 +13,7 @@ pheno = function(parent,id){
       cRadius,
       arcDiff,
       tooltip,
+      arcGroups,
       arcPaths,
       categories,
       species = {},
@@ -116,16 +117,16 @@ pheno = function(parent,id){
       .enter().append("g");
 
     categoryTicks.append("circle")
-        .attr("r", function(d,i) {return cRadius(i)})
-        .attr('fill','none')
+        .attr("r", function(d,i) {return cRadius[i]})
+        .attr('fill',function(d,i) {return brew(d,i)})
 
     categoryTicks.append("text")
-        .attr("y", function(d,i) { return -cRadius(i) - 4; })
+        .attr("y", function(d,i) { return -cRadius[i] - 4; })
         .attr("transform", "rotate(0)")
         .style("text-anchor", "middle")
         .text(function(d) { return d; });
 
-    var arcGroups = clock
+    arcGroups = clock
       .selectAll(".category")
       .data(categories)
         .enter().append("g")
@@ -197,7 +198,7 @@ pheno = function(parent,id){
   self.init = function(_d) {
     data = _d
     r = d3.scale.linear().domain([0, data.length-1]).range([innerBound, Math.min(w/2,h/2)])
-    arcDiff = Math.floor((r.range()[1]-r.range()[0])/data.length)
+    arcDiff = (r.range()[1]-r.range()[0])/data.length
     categories = _.uniq(data.map(function(d) {return d.category}))
      
     var temp = []
@@ -225,7 +226,16 @@ pheno = function(parent,id){
     data = temp
 
     console.log(data,categories,species)
-    cRadius = d3.scale.ordinal().domain(d3.range(categories.length)).rangePoints([innerBound, outerBound/2+arcDiff], 2)
+    // cRadius = d3.scale.ordinal().domain(d3.range(categories.length)).rangePoints([innerBound, outerBound/2+arcDiff], 2)
+    
+    cRadius = [] 
+    _.each(categories, function(c,i) {
+      if(i>0){
+        cRadius[i]= cRadius[i-1]+species[categories[i-1]].length*arcDiff
+      }else{
+        cRadius[i]= innerBound-arcDiff
+      }
+    })
 
     if(w>0){ // should be minBound
       self.draw(parentEl, chartId)
@@ -240,8 +250,8 @@ pheno = function(parent,id){
     axisRadus = outerBound/2+10
     time = d3.scale.linear().domain([d1,d2]).range([0,2*Math.PI])
     r = d3.scale.linear().domain([0, data.length-1]).range([innerBound, Math.min(w/2,h/2)])
-    arcDiff = Math.floor((r.range()[1]-r.range()[0])/data.length)
-    cRadius = d3.scale.ordinal().domain(d3.range(categories.length)).rangePoints([0, outerBound/2], 2)
+    arcDiff = (r.range()[1]-r.range()[0])/data.length
+    // cRadius = d3.scale.ordinal().domain(d3.range(categories.length)).rangePoints([0, outerBound/2], 2)
 
     _.each(data,function(d,i) {
       d.innerRadius = parseInt(r(i)-arcDiff)
@@ -250,7 +260,21 @@ pheno = function(parent,id){
       d.next.outerRadius = parseInt(r(i)+Math.floor((r.range()[1]-r.range()[0])/data.length))
     })
 
-    arcPaths.data(data)
+    cRadius = [] 
+    _.each(categories, function(c,i) {
+      if(i>0){
+        cRadius[i]= cRadius[i-1]+species[categories[i-1]].length*arcDiff
+      }else{
+        cRadius[i]= innerBound-arcDiff
+      }
+    })
+
+    // arcPaths.data(data)
+    arcPaths = arcGroups
+      .selectAll("path")
+      .data(function(d,i) {return species[d] })
+
+
     if(w>0){ // should be minBound
       self.draw(parentEl, chartId)
     }
