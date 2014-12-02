@@ -1,10 +1,10 @@
 'use strict'
 window.pheno = window.pheno || {}
 
-pheno = function(parent,id){
+pheno = function(parentSel,id){
   var self = {},
       chartId = id,
-      parentEl = parent,
+      parentSel = parentSel,
       r,
       svg,
       clock,
@@ -16,16 +16,20 @@ pheno = function(parent,id){
       arcGroups,
       arcPaths,
       categories,
+      lastAngle=0,
       species = {},
-      margin = {r: 90},
+      margin = {r: 30},
+      arcDuration = 1000,
+      rotationDuration = 1000,
       arc = d3.svg.arc(),
       d1 = new Date('1/1/2014'),
       d2 = new Date('1/1/2015'),
       doy = getDaysBetween(d1,d2),
       c1 = d3.scale.category20c(),
       c2 = d3.scale.category20b(),
-      w = Math.min(window.innerWidth,window.innerHeight) - 3*margin.r,
-      h = Math.min(window.innerWidth,window.innerHeight) - 3*margin.r,
+      min = Math.min(parseInt(d3.select(parentSel).style('width')),parseInt(d3.select(parentSel).style('height'))),
+      w = min - 3*margin.r,
+      h = min - 3*margin.r,
       outerBound = Math.min(w,h),
       innerBound = .15*outerBound,
       axisRadus = outerBound/2+10,
@@ -43,17 +47,23 @@ pheno = function(parent,id){
       .radius(function(d) { return r(d[1]); })
       .angle(function(d) { return -d[0] + Math.PI / 2; });
 
+  var dispatch = d3.dispatch(
+      'monthClick',
+      'arcClick',
+      'arcHover'
+    )
+
   self.draw = function() {
-    svg = d3.select(parentEl).html('').append("svg")
-      .attr("width", window.innerWidth)
-      .attr("height", window.innerHeight)
+    svg = d3.select(parentSel).html('').append("svg")
+      .attr("width", '100%')
+      .attr("height", '100%')
 
     var clock = svg.append("g").classed('clock',true)
-        .attr("transform", "translate("+ window.innerWidth/2 + "," + window.innerHeight/2 + ")")
+        .attr("transform", "translate("+ min/2 + "," + min/2 + ")")
 
     var dayTicks = clock
       .append("g")
-        .classed('a-tick axis',true)
+        .classed('a-tick axis rotate'  ,true)
       .selectAll("g")
         .data(d3.range(0, 365))
       .enter().append("g")
@@ -85,7 +95,7 @@ pheno = function(parent,id){
         //   return (doy[364-d].getDate() == 1 || doy[364-d].getDate()%7 ==0)? matrix : null
         // })
 
-    clock.append('g').classed('months', true)
+    clock.append('g').classed('months rotate', true)
       
     var monthTicks = d3.select('.months')
       .selectAll('text')
@@ -110,28 +120,12 @@ pheno = function(parent,id){
         orientSpeciesTop({startAngle:time(d)})
       })
 
-    var categoryTicks = clock.append("g")
-        .classed('r-tick axis',true)
-      .selectAll("g")
-        .data(categories)
-      .enter().append("g");
-
-    categoryTicks.append("circle")
-        .attr("r", function(d,i) {return cRadius[i]})
-        .attr('fill',function(d,i) {return brew(d,i)})
-
-    categoryTicks.append("text")
-        .attr("y", function(d,i) { return -cRadius[i] - 4; })
-        .attr("transform", "rotate(0)")
-        .style("text-anchor", "middle")
-        .text(function(d) { return d; });
-
     arcGroups = clock
       .selectAll(".category")
       .data(categories)
         .enter().append("g")
         .attr('class', function(d) {
-          return 'category '+ d
+          return 'category rotate '+ d
         })
 
     arcPaths = arcGroups
@@ -161,17 +155,36 @@ pheno = function(parent,id){
         })
         .on('click', function(d) {
           d3.select('svg').style('transition-duration', '.8s')
-          orientSpeciesTop(d)
+          console.log(d)
         })
         .attr("d", arc)
         .transition()
-        .duration(1000)
+        .duration(arcDuration)
         .attrTween("d", tweenArc(function(d, i) {
           return {
             startAngle: d.next.startAngle,
             endAngle: d.next.endAngle
           }
         }))
+    
+    orientSpeciesTop({startAngle:time((new Date()).getTime())})
+
+
+    var categoryTicks = clock.append("g")
+        .classed('r-tick axis',true)
+      .selectAll("g")
+        .data(categories)
+      .enter().append("g");
+
+    categoryTicks.append("circle")
+        .attr("r", function(d,i) {return cRadius[i]})
+
+    categoryTicks.append("text")
+        .attr("y", function(d,i) { return -cRadius[i] - 4; })
+        .attr("transform", "rotate(0)")
+        .style("text-anchor", "middle")
+        .text(function(d) { return d; });
+
 
     cross = clock.append('g')
         .classed('logo',true)
@@ -183,11 +196,13 @@ pheno = function(parent,id){
           'fill-opacity': 1
         })
 
-    tooltip = d3.select(parentEl).append('div').classed('tooltip',true)
+    tooltip = d3.select(parentSel).append('div')
+      .attr('id','tooltip-'+chartId)
+      .classed('tooltip',true)
       .style({
         position:'absolute',
-        top:window.innerHeight/2-50+'px',
-        left:window.innerWidth/2-90+'px',
+        top:min/2-50+'px',
+        left:min/2-90+'px',
         'text-align':'center',
         opacity:1,
         width: '200px',
@@ -198,7 +213,7 @@ pheno = function(parent,id){
   self.init = function(_d) {
     data = _d
     r = d3.scale.linear().domain([0, data.length-1]).range([innerBound, Math.min(w/2,h/2)])
-    arcDiff = (r.range()[1]-r.range()[0])/data.length
+    arcDiff = Math.ceil((r.range()[1]-r.range()[0])/data.length)
     categories = _.uniq(data.map(function(d) {return d.category}))
      
     var temp = []
@@ -206,10 +221,10 @@ pheno = function(parent,id){
       var o = {}
       o.innerRadius = parseInt(r(i)-arcDiff)
       o.outerRadius = parseInt(r(i))
-      o.startAngle = time((new Date(d.start)).getTime())+.01  //todo fix bad hack to add .01 offset 
-      o.endAngle = time((new Date(d.end)).getTime())
+      o.startAngle = time((new Date(d.start)).getTime())+.018  //todo fix bad hack to add offset 
+      o.endAngle = time((new Date(d.end)).getTime())+.024      //todo fix bad hack to add offset
       o.next = _.clone(o)
-      o.endAngle = time((new Date(d.start)).getTime())
+      o.endAngle = time((new Date(d.start)).getTime())+.024    //todo fix bad hack to add offset
       d.id = i
       o.data = d 
       temp.push(o)
@@ -238,26 +253,30 @@ pheno = function(parent,id){
     })
 
     if(w>0){ // should be minBound
-      self.draw(parentEl, chartId)
+      self.draw(parentSel, chartId)
     }
   }
 
   self.resize = function(_w,_h) {
-    w = Math.min(window.innerWidth,window.innerHeight) - 3*margin.r
-    h = Math.min(window.innerWidth,window.innerHeight) - 3*margin.r
+
+    min = Math.min(parseInt(d3.select(parentSel).style('width')),parseInt(d3.select(parentSel).style('height')))
+    w = min - 3*margin.r
+    h = min - 3*margin.r
     outerBound = Math.min(w,h)
     innerBound = .15*outerBound
     axisRadus = outerBound/2+10
     time = d3.scale.linear().domain([d1,d2]).range([0,2*Math.PI])
     r = d3.scale.linear().domain([0, data.length-1]).range([innerBound, Math.min(w/2,h/2)])
-    arcDiff = (r.range()[1]-r.range()[0])/data.length
+    arcDiff = Math.ceil((r.range()[1]-r.range()[0])/data.length)
     // cRadius = d3.scale.ordinal().domain(d3.range(categories.length)).rangePoints([0, outerBound/2], 2)
+
+    console.log(min)
 
     _.each(data,function(d,i) {
       d.innerRadius = parseInt(r(i)-arcDiff)
       d.outerRadius = parseInt(r(i))
       d.next.innerRadius = parseInt(r(i))
-      d.next.outerRadius = parseInt(r(i)+Math.floor((r.range()[1]-r.range()[0])/data.length))
+      d.next.outerRadius = parseInt(r(i)+arcDiff)
     })
 
     cRadius = [] 
@@ -276,12 +295,24 @@ pheno = function(parent,id){
 
 
     if(w>0){ // should be minBound
-      self.draw(parentEl, chartId)
+      self.draw(parentSel, chartId)
     }
   }
 
   self.rotateClock = function(angle) {
-    d3.select('svg').style('transform','rotate('+angle+'deg)')
+    // d3.select('svg').style('transform','rotate('+angle+'deg)')
+    angle = Math.floor(angle*180/Math.PI)
+    d3.selectAll('.rotate')
+      .transition()
+      .duration(rotationDuration)
+      .attrTween("transform", tween);
+
+    var lastAngle = d3.select('.rotate').attr('transform')
+    lastAngle = (lastAngle) ? lastAngle : 'rotate(0)'
+
+    function tween(d, i) {
+      return d3.interpolateString(lastAngle, "rotate("+angle+")");
+    }
   }
 
   self.scheduleFn = function(fn){
@@ -296,7 +327,7 @@ pheno = function(parent,id){
 
   var orientSpeciesTop = function(p) {
     var rotate = (p.startAngle<Math.PI) ? -(p.startAngle) : 2*Math.PI - p.startAngle
-    self.rotateClock(rotate*180/Math.PI)
+    self.rotateClock(rotate)
   }
 
   var tweenArc = function (b) {
@@ -333,10 +364,28 @@ pheno = function(parent,id){
 
     return cb.value[dataClasses].slice(slice, dataClasses)[(i)%(dataClasses-slice)]
   }
+
+  d3.rebind(self,dispatch,'on')
   return self
 }
 
-var clock = new pheno('body', 'clock')
+function unSlug(text){
+    return text.toLowerCase().replace(/ /g,'-').replace(/[^\w-]+/g,'')
+}
+
+function toSlug(text){
+    return text.toLowerCase().replace(/ /g,'-').replace(/[^\w-]+/g,'')
+}
+
+function isNumeric(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+
+
+
+d3.select('#inner').attr("width", '80%').style("height", .90*window.innerHeight+'px')
+var clock = new pheno('#inner', 'clock')
 
 d3.json("data.json", function(error, data) {
   clock.init(data)
@@ -352,5 +401,3 @@ var start = function (time) {
   deg +=180
   clock.rotateClock(deg)
 }
-
-

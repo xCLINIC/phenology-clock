@@ -27,7 +27,7 @@ body {
 
 </style>
 <body>
-<script src="../d3.v3.js"></script>
+<script src="http://d3js.org/d3.v3.js"></script>
 <script src="http://d3js.org/colorbrewer.v1.min.js"></script>
 <script>
 
@@ -59,7 +59,7 @@ var cb = d3.entries(colorbrewer).filter(function(d){
 })
 
 cb.map(function(d){return d.key}).slice(0, -2)
-// cb = shuffle(cb)
+cb = shuffle(cb)
 
 //["YlOrRd", "PuBuGn", "Purples", "Reds", "YlGnBu", "Blues", "YlGn", "BuPu", "YlOrBr", "PuRd", "RdPu", "GnBu"]
 //["PuBuGn", "RdPu", "PuRd", "YlGnBu", "YlOrBr", "Blues", "YlGn", "YlOrRd", "GnBu", "BuPu", "Reds", "Purples"]
